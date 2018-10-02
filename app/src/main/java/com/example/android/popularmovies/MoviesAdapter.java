@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.MoviesAdapter.MoviesAdapterViewHolder;
 import com.squareup.picasso.Picasso;
@@ -76,11 +78,11 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapterViewHolder>
   public class MoviesAdapterViewHolder extends RecyclerView.ViewHolder implements
       OnClickListener {
 
-    public final ImageView mPosterImageView;
+    @BindView(R.id.iv_poster) ImageView mPosterImageView;
 
     public MoviesAdapterViewHolder(View view) {
       super(view);
-      mPosterImageView = view.findViewById(R.id.iv_poster);
+      ButterKnife.bind(this, view);
       view.setOnClickListener(this);
     }
 

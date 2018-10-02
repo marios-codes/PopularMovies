@@ -12,6 +12,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Models.ServerResponse;
 import com.example.android.popularmovies.MoviesAdapter.MoviesAdapterOnClickHandler;
@@ -34,20 +36,19 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   private enum SortedBy {POPULARITY, TOP_RATED}
 
   private static final String API_KEY = BuildConfig.ApiKey;
-
-  private RecyclerView mRecyclerView;
+  @BindView(R.id.recyclerview_movies)
+  RecyclerView mRecyclerView;
+  @BindView(R.id.pb_loading_indicator)
+  ProgressBar mLoadingIndicator;
   private MoviesAdapter mMoviesAdapter;
-  private ProgressBar mLoadingIndicator;
   private MovieDBInterface mDataBaseInterface;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+    ButterKnife.bind(this);
 
-    //initialize loading indicator to avoid NPE in case there is no internet connection and
-    //a sorting option from the menu is chosen
-    mLoadingIndicator = findViewById(R.id.pb_loading_indicator);
 
     //Check if there is Internet connectivity
     new InternetCheck(new Consumer() {
@@ -66,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   }
 
   private void initViews() {
-    mRecyclerView = findViewById(R.id.recyclerview_movies);
     GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, GRID_SPAN_COUNT);
     mRecyclerView.setLayoutManager(layoutManager);
     mRecyclerView.setHasFixedSize(true);

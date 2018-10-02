@@ -8,6 +8,8 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
 import com.squareup.picasso.Picasso;
 
@@ -15,12 +17,22 @@ public class DetailActivity extends AppCompatActivity {
 
   //intent extras
   public final static String EXTRA_MOVIE = "intent.extra.movie";
+  @BindView(R.id.toolbar) Toolbar toolbar;
+  @BindView(R.id.tv_detail_title) TextView titleTV;
+  @BindView(R.id.tv_detail_rating) TextView ratingTV;
+  @BindView(R.id.tv_detail_release_date) TextView releaseDateTV;
+  @BindView(R.id.tv_detail_synopsis) TextView synopsisTV;
+  @BindView(R.id.iv_detail_poster) ImageView posterIV;
+  @BindView(R.id.iv_expanded_poster) ImageView backDropIV;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_detail);
-    Toolbar toolbar = findViewById(R.id.toolbar);
+
+    ButterKnife.bind(this);
+
     setSupportActionBar(toolbar);
 
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -42,13 +54,6 @@ public class DetailActivity extends AppCompatActivity {
   }
 
   private void initViews(Movie movie) {
-    TextView titleTV = findViewById(R.id.tv_detail_title);
-    TextView ratingTV = findViewById(R.id.tv_detail_rating);
-    TextView releaseDateTV = findViewById(R.id.tv_detail_release_date);
-    TextView synopsisTV = findViewById(R.id.tv_detail_synopsis);
-    ImageView posterIV = findViewById(R.id.iv_detail_poster);
-    ImageView backDropIV = findViewById(R.id.iv_expanded_poster);
-
     titleTV.setText(movie.getTitle());
     ratingTV.setText(getResources()
         .getString(R.string.detail_movie_rating, String.valueOf(movie.getUserRating())));
