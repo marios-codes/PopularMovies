@@ -30,10 +30,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity implements MoviesAdapterOnClickHandler {
 
   private static final String TAG = MainActivity.class.getSimpleName();
+  private static final String SAVED_LIST_POSITION_KEY = "list-position";
+  private static final String SAVED_PREFERRED_SORTING_KEY = "sorting-type";
 
   private static final int GRID_SPAN_COUNT = 2;
 
   private enum SortedBy {POPULARITY, TOP_RATED}
+
+  private SortedBy mSortedBy = SortedBy.POPULARITY;
+
 
   private static final String API_KEY = BuildConfig.ApiKey;
   @BindView(R.id.recyclerview_movies)
@@ -44,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   private MovieDBInterface mDataBaseInterface;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     ButterKnife.bind(this);
@@ -60,21 +65,27 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
         } else {
           //setup Retrofit
           mDataBaseInterface = setupMovieDbInterface();
-          initViews();
+          //get preferred sorting order in case the activity is recreated due to a configuration change
+          if (savedInstanceState!= null) {
+            if (savedInstanceState.containsKey(SAVED_PREFERRED_SORTING_KEY)) {
+              mSortedBy = (SortedBy) savedInstanceState.getSerializable(SAVED_PREFERRED_SORTING_KEY);
+            }
+          }
+          initViews(savedInstanceState);
         }
       }
     });
   }
 
-  private void initViews() {
-    GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, GRID_SPAN_COUNT);
-    mRecyclerView.setLayoutManager(layoutManager);
+  private void initViews(Bundle savedInstanceState) {
+    GridLayoutManager mLayoutManager = new GridLayoutManager(MainActivity.this, GRID_SPAN_COUNT);
+    mRecyclerView.setLayoutManager(mLayoutManager);
     mRecyclerView.setHasFixedSize(true);
 
     mMoviesAdapter = new MoviesAdapter(this);
     mRecyclerView.setAdapter(mMoviesAdapter);
 
-    loadMoviesData(mDataBaseInterface, SortedBy.POPULARITY);
+    loadMoviesData(mDataBaseInterface, mSortedBy, savedInstanceState);
   }
 
   private MovieDBInterface setupMovieDbInterface() {
@@ -86,7 +97,8 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     return retrofit.create(MovieDBInterface.class);
   }
 
-  private void loadMoviesData(MovieDBInterface movieDBInterface, SortedBy sortedBy) {
+  private void loadMoviesData(MovieDBInterface movieDBInterface, SortedBy sortedBy,
+      final Bundle savedInstanceState) {
     mLoadingIndicator.setVisibility(View.VISIBLE);
 
     Call<ServerResponse> moviesRequest;
@@ -116,7 +128,14 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
           if (serverResponse != null) {
             moviesList = serverResponse.getMovies();
             mMoviesAdapter.setMoviesList(moviesList);
-            mRecyclerView.smoothScrollToPosition(0);
+            if (savedInstanceState != null) {
+              if (savedInstanceState.containsKey(SAVED_LIST_POSITION_KEY)) {
+                int savedScrolledPosition = savedInstanceState.getInt(SAVED_LIST_POSITION_KEY);
+                mRecyclerView.scrollToPosition(savedScrolledPosition);
+              }
+            } else {
+              mRecyclerView.scrollToPosition(0);
+            }
           } else {
             mLoadingIndicator.setVisibility(View.INVISIBLE);
             Log.w(TAG, "onResponse: Server Response = null");
@@ -175,7 +194,8 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
                   Toast.LENGTH_LONG).show();
             } else {
               item.setChecked(true);
-              loadMoviesData(mDataBaseInterface, SortedBy.POPULARITY);
+              mSortedBy = SortedBy.POPULARITY;
+              loadMoviesData(mDataBaseInterface, mSortedBy, null);
             }
           }
         });
@@ -190,7 +210,8 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
                   Toast.LENGTH_LONG).show();
             } else {
               item.setChecked(true);
-              loadMoviesData(mDataBaseInterface, SortedBy.TOP_RATED);
+              mSortedBy = SortedBy.TOP_RATED;
+              loadMoviesData(mDataBaseInterface, mSortedBy, null);
             }
           }
         });
@@ -198,5 +219,17 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
       default:
         return super.onOptionsItemSelected(item);
     }
+  }
+
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    //save the scroll position of the list and the preferred sorting type
+    //in order to retain it on a configuration change
+    int scrolledPosition = ((GridLayoutManager)
+        mRecyclerView.getLayoutManager())
+        .findFirstVisibleItemPosition();
+    outState.putInt(SAVED_LIST_POSITION_KEY, scrolledPosition);
+    outState.putSerializable(SAVED_PREFERRED_SORTING_KEY, mSortedBy);
   }
 }
