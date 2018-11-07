@@ -2,6 +2,7 @@ package com.example.android.popularmovies;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -130,13 +131,14 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
             mMoviesAdapter.setMoviesList(moviesList);
             if (savedInstanceState != null) {
               if (savedInstanceState.containsKey(SAVED_LIST_POSITION_KEY)) {
-                int savedScrolledPosition = savedInstanceState.getInt(SAVED_LIST_POSITION_KEY);
-                mRecyclerView.scrollToPosition(savedScrolledPosition);
+                Parcelable savedRecyclerLayoutState = savedInstanceState.getParcelable(SAVED_LIST_POSITION_KEY);
+                mRecyclerView.getLayoutManager().onRestoreInstanceState(savedRecyclerLayoutState);
               }
             } else {
               mRecyclerView.scrollToPosition(0);
             }
           } else {
+            //server response is null
             mLoadingIndicator.setVisibility(View.INVISIBLE);
             Log.w(TAG, "onResponse: Server Response = null");
           }
@@ -226,10 +228,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     super.onSaveInstanceState(outState);
     //save the scroll position of the list and the preferred sorting type
     //in order to retain it on a configuration change
-    int scrolledPosition = ((GridLayoutManager)
-        mRecyclerView.getLayoutManager())
-        .findFirstVisibleItemPosition();
-    outState.putInt(SAVED_LIST_POSITION_KEY, scrolledPosition);
+    outState.putParcelable(SAVED_LIST_POSITION_KEY, mRecyclerView.getLayoutManager().onSaveInstanceState());
     outState.putSerializable(SAVED_PREFERRED_SORTING_KEY, mSortedBy);
   }
 }

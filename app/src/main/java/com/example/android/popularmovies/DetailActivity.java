@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,6 +18,8 @@ public class DetailActivity extends AppCompatActivity {
 
   //intent extras
   public final static String EXTRA_MOVIE = "intent.extra.movie";
+  private static final String TAG = DetailActivity.class.getSimpleName();
+
   @BindView(R.id.toolbar) Toolbar toolbar;
   @BindView(R.id.tv_detail_title) TextView titleTV;
   @BindView(R.id.tv_detail_rating) TextView ratingTV;
@@ -47,6 +50,7 @@ public class DetailActivity extends AppCompatActivity {
 
     Movie movie = intent.getParcelableExtra(EXTRA_MOVIE);
     if (movie != null) {
+      Log.d(TAG, "Movie Id: " + movie.getId());
       initViews(movie);
     } else {
       closeOnError();

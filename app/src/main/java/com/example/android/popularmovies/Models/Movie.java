@@ -10,6 +10,9 @@ public class Movie implements Parcelable {
   private static final String BASE_POSTER_IMAGE_URL = "http://image.tmdb.org/t/p/w185";
   public static final String BASE_BACKDROP_IMAGE_URL = "http://image.tmdb.org/t/p/w500";
 
+  @SerializedName("id")
+  @Expose
+  private Integer id;
   @SerializedName("vote_average")
   @Expose
   private Double userRating;
@@ -38,6 +41,7 @@ public class Movie implements Parcelable {
   }
 
   /**
+   * @param id
    * @param title
    * @param userRating
    * @param posterPath
@@ -45,9 +49,11 @@ public class Movie implements Parcelable {
    * @param plotSynopsis
    * @param releaseDate
    */
-  public Movie(String title, Double userRating, String posterPath, String backdropPath,
+  public Movie(Integer id, String title, Double userRating, String posterPath,
+      String backdropPath,
       String plotSynopsis, String releaseDate) {
     super();
+    this.id = id;
     this.title = title;
     this.userRating = userRating;
     this.posterPath = posterPath;
@@ -68,6 +74,14 @@ public class Movie implements Parcelable {
       return new Movie[size];
     }
   };
+
+  public Integer getId() {
+    return id;
+  }
+
+  public void setId(Integer id) {
+    this.id = id;
+  }
 
   public Double getUserRating() {
     return userRating;
@@ -119,6 +133,7 @@ public class Movie implements Parcelable {
 
   //Parcelable Constructor
   protected Movie(Parcel in) {
+    id = in.readInt();
     title = in.readString();
     userRating = in.readDouble();
     posterPath = in.readString();
@@ -136,6 +151,7 @@ public class Movie implements Parcelable {
   //write object values to parcel for storage
   @Override
   public void writeToParcel(Parcel dest, int flags) {
+    dest.writeInt(id);
     dest.writeString(title);
     dest.writeDouble(userRating);
     dest.writeString(posterPath);
