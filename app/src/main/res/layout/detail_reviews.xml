@@ -17,10 +17,11 @@
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent"
     app:srcCompat="@android:color/black"/>
+
   <android.support.v7.widget.RecyclerView
     android:id="@+id/rv_detail_reviews"
     android:layout_width="0dp"
-    android:layout_height="match_constraint"
+    android:layout_height="0dp"
     android:layout_marginTop="16dp"
     android:layout_marginBottom="8dp"
     app:layout_constraintBottom_toBottomOf="parent"
