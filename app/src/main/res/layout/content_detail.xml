@@ -73,17 +73,22 @@
       android:layout_width="0dp"
       android:layout_height="wrap_content"
       android:layout_marginTop="16dp"
-      android:layout_marginBottom="16dp"
       android:layout_marginStart="16dp"
       android:layout_marginEnd="16dp"
       android:textAppearance="@style/TextAppearance.AppCompat.Small"
       android:textSize="18sp"
-      app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintHorizontal_bias="0.0"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/iv_detail_poster"
-      tools:text="@string/large_text"/>
+      tools:text='A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.'/>
+
+    <include
+      layout="@layout/detail_trailer"
+      android:layout_marginTop="16dp"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      app:layout_constraintTop_toBottomOf="@+id/tv_detail_synopsis"/>
 
   </android.support.constraint.ConstraintLayout>
 </android.support.v4.widget.NestedScrollView>
