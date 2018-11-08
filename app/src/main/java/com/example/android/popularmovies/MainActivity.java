@@ -21,12 +21,11 @@ import com.example.android.popularmovies.MoviesAdapter.MoviesAdapterOnClickHandl
 import com.example.android.popularmovies.Network.InternetCheck;
 import com.example.android.popularmovies.Network.InternetCheck.Consumer;
 import com.example.android.popularmovies.Network.MovieDBInterface;
+import com.example.android.popularmovies.Network.MovieDBUtils;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements MoviesAdapterOnClickHandler {
 
@@ -41,13 +40,13 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   private SortedBy mSortedBy = SortedBy.POPULARITY;
 
 
-  private static final String API_KEY = BuildConfig.ApiKey;
+  public static final String API_KEY = BuildConfig.ApiKey;
   @BindView(R.id.recyclerview_movies)
   RecyclerView mRecyclerView;
   @BindView(R.id.pb_loading_indicator)
   ProgressBar mLoadingIndicator;
   private MoviesAdapter mMoviesAdapter;
-  private MovieDBInterface mDataBaseInterface;
+  private MovieDBInterface mMovieDBInterface;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -65,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
               Toast.LENGTH_LONG).show();
         } else {
           //setup Retrofit
-          mDataBaseInterface = setupMovieDbInterface();
+          mMovieDBInterface = MovieDBUtils.setupMovieDbInterface();
           //get preferred sorting order in case the activity is recreated due to a configuration change
           if (savedInstanceState!= null) {
             if (savedInstanceState.containsKey(SAVED_PREFERRED_SORTING_KEY)) {
@@ -86,17 +85,17 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     mMoviesAdapter = new MoviesAdapter(this);
     mRecyclerView.setAdapter(mMoviesAdapter);
 
-    loadMoviesData(mDataBaseInterface, mSortedBy, savedInstanceState);
+    loadMoviesData(mMovieDBInterface, mSortedBy, savedInstanceState);
   }
 
-  private MovieDBInterface setupMovieDbInterface() {
-    Retrofit retrofit = new Retrofit.Builder()
-        .baseUrl("https://api.themoviedb.org/3/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build();
-
-    return retrofit.create(MovieDBInterface.class);
-  }
+//  private MovieDBInterface setupMovieDbInterface() {
+//    Retrofit retrofit = new Retrofit.Builder()
+//        .baseUrl("https://api.themoviedb.org/3/")
+//        .addConverterFactory(GsonConverterFactory.create())
+//        .build();
+//
+//    return retrofit.create(MovieDBInterface.class);
+//  }
 
   private void loadMoviesData(MovieDBInterface movieDBInterface, SortedBy sortedBy,
       final Bundle savedInstanceState) {
@@ -196,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
             } else {
               item.setChecked(true);
               mSortedBy = SortedBy.POPULARITY;
-              loadMoviesData(mDataBaseInterface, mSortedBy, null);
+              loadMoviesData(mMovieDBInterface, mSortedBy, null);
             }
           }
         });
@@ -212,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
             } else {
               item.setChecked(true);
               mSortedBy = SortedBy.TOP_RATED;
-              loadMoviesData(mDataBaseInterface, mSortedBy, null);
+              loadMoviesData(mMovieDBInterface, mSortedBy, null);
             }
           }
         });

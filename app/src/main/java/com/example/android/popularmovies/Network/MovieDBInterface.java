@@ -16,6 +16,6 @@ public interface MovieDBInterface {
   Call<MoviesResponse> getTopRatedMoviesList(@Query("api_key") String apiKey);
 
   @GET("movie/{movieId}/videos")
-  Call<TrailersResponse> getMovieTrailers(@Path("movieId") String movieId,
+  Call<TrailersResponse> getMovieTrailers(@Path("movieId") Integer movieId,
       @Query("api_key") String apiKey);
 }
