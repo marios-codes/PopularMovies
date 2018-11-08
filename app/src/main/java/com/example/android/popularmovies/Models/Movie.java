@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
 public class Movie implements Parcelable {
 
   private static final String BASE_POSTER_IMAGE_URL = "http://image.tmdb.org/t/p/w185";
-  public static final String BASE_BACKDROP_IMAGE_URL = "http://image.tmdb.org/t/p/w500";
+  private static final String BASE_BACKDROP_IMAGE_URL = "http://image.tmdb.org/t/p/w500";
 
   @SerializedName("id")
   @Expose

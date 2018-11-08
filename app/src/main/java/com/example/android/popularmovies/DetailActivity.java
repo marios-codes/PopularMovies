@@ -13,7 +13,16 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
+import com.example.android.popularmovies.Models.RetrofitResponse.TrailersResponse;
+import com.example.android.popularmovies.Models.Trailer;
+import com.example.android.popularmovies.Network.MovieDBInterface;
+import com.example.android.popularmovies.Network.MovieDBUtils;
 import com.squareup.picasso.Picasso;
+import java.util.ArrayList;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -21,14 +30,25 @@ public class DetailActivity extends AppCompatActivity {
   public final static String EXTRA_MOVIE = "intent.extra.movie";
   private static final String TAG = DetailActivity.class.getSimpleName();
 
-  @BindView(R.id.toolbar) Toolbar toolbar;
-  @BindView(R.id.tv_detail_title) TextView titleTV;
-  @BindView(R.id.tv_detail_rating) TextView ratingTV;
-  @BindView(R.id.tv_detail_release_date) TextView releaseDateTV;
-  @BindView(R.id.tv_detail_synopsis) TextView synopsisTV;
-  @BindView(R.id.iv_detail_poster) ImageView posterIV;
-  @BindView(R.id.iv_expanded_poster) ImageView backDropIV;
+  //MovieDB trailer type of video
+  private static final String TYPE_TRAILER = "Trailer";
 
+  @BindView(R.id.toolbar)
+  Toolbar toolbar;
+  @BindView(R.id.tv_detail_title)
+  TextView titleTV;
+  @BindView(R.id.tv_detail_rating)
+  TextView ratingTV;
+  @BindView(R.id.tv_detail_release_date)
+  TextView releaseDateTV;
+  @BindView(R.id.tv_detail_synopsis)
+  TextView synopsisTV;
+  @BindView(R.id.iv_detail_poster)
+  ImageView posterIV;
+  @BindView(R.id.iv_expanded_poster)
+  ImageView backDropIV;
+
+  private MovieDBInterface mMovieDBInterface;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +71,9 @@ public class DetailActivity extends AppCompatActivity {
 
     Movie movie = intent.getParcelableExtra(EXTRA_MOVIE);
     if (movie != null) {
-      Log.d(TAG, "Movie Id: " + movie.getId());
       initViews(movie);
+      mMovieDBInterface = MovieDBUtils.setupMovieDbInterface();
+      makeCallForTrailer(movie.getId());
     } else {
       closeOnError();
     }
@@ -75,6 +96,53 @@ public class DetailActivity extends AppCompatActivity {
         .load(movie.getBackdropPath())
         .placeholder(R.drawable.ic_popcorn_placeholder)
         .into(backDropIV);
+  }
+
+  private void makeCallForTrailer(Integer movieId) {
+    Call<TrailersResponse> trailersRequest = mMovieDBInterface
+        .getMovieTrailers(movieId, MainActivity.API_KEY);
+
+    trailersRequest.enqueue(new Callback<TrailersResponse>() {
+      @Override
+      public void onResponse(Call<TrailersResponse> call, Response<TrailersResponse> response) {
+        if (response.isSuccessful()) {
+          TrailersResponse trailersResponse = response.body();
+          List<Trailer> trailerList;
+          if (trailersResponse != null) {
+            trailerList = trailersResponse.getTrailerList();
+            //check only for trailer video, and no other kind of video
+            ArrayList<String> trailerURLsList = new ArrayList<>();
+            for (Trailer trailer : trailerList) {
+              if (trailer.getType().equals(TYPE_TRAILER)) {
+                //populate the array with trailer URLs duh
+                trailerURLsList.add(trailer.getUrl());
+              }
+            }
+            //We only care for one trailer, so let's take the first element of the
+            //trailerURLsList array, if it has at least one element
+            if (!trailerURLsList.isEmpty()) {
+              String trailerUrl = trailerURLsList.get(0);
+              Log.d(TAG, "onResponse: trailerUrl: " + trailerUrl);
+            } else {
+              //no trailers available
+              Log.d(TAG, "onResponse: no trailers available");
+            }
+
+          } else {
+            Log.w(TAG, "onResponse: Server Response = null");
+          }
+        } else {
+          Log.w(TAG, "Trailer onResponse: Response unsuccessful with code: " + response.code());
+        }
+      }
+
+      @Override
+      public void onFailure(Call<TrailersResponse> call, Throwable t) {
+        Toast.makeText(DetailActivity.this, R.string.error_unknown,
+            Toast.LENGTH_SHORT).show();
+        Log.e(TAG, "onFailure: Throwable: " + t.getMessage());
+      }
+    });
   }
 
   private void closeOnError() {
