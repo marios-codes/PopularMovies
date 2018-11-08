@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -51,8 +50,8 @@ public class DetailActivity extends AppCompatActivity {
 
     Movie movie = intent.getParcelableExtra(EXTRA_MOVIE);
     if (movie != null) {
-      Log.d(TAG, "Movie Id: " + movie.getId());
       initViews(movie);
+      makeCallForTrailer(movie.getId());
     } else {
       closeOnError();
     }
@@ -75,6 +74,10 @@ public class DetailActivity extends AppCompatActivity {
         .load(movie.getBackdropPath())
         .placeholder(R.drawable.ic_popcorn_placeholder)
         .into(backDropIV);
+  }
+
+  private void makeCallForTrailer(Integer movieId) {
+
   }
 
   private void closeOnError() {

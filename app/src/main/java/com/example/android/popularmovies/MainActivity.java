@@ -16,7 +16,7 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
-import com.example.android.popularmovies.Models.ServerResponse;
+import com.example.android.popularmovies.Models.RetrofitResponse.MoviesResponse;
 import com.example.android.popularmovies.MoviesAdapter.MoviesAdapterOnClickHandler;
 import com.example.android.popularmovies.Network.InternetCheck;
 import com.example.android.popularmovies.Network.InternetCheck.Consumer;
@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
       final Bundle savedInstanceState) {
     mLoadingIndicator.setVisibility(View.VISIBLE);
 
-    Call<ServerResponse> moviesRequest;
+    Call<MoviesResponse> moviesRequest;
     switch (sortedBy) {
       case POPULARITY:
         moviesRequest = movieDBInterface
@@ -117,17 +117,17 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
         break;
     }
 
-    moviesRequest.enqueue(new Callback<ServerResponse>() {
+    moviesRequest.enqueue(new Callback<MoviesResponse>() {
       @Override
-      public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+      public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
         Log.d(TAG, "onResponse: Call: " + call);
         Log.d(TAG, "onResponse: response: " + response);
         if (response.isSuccessful()) {
-          ServerResponse serverResponse = response.body();
+          MoviesResponse moviesResponse = response.body();
           List<Movie> moviesList;
-          if (serverResponse != null) {
-            moviesList = serverResponse.getMovies();
+          if (moviesResponse != null) {
+            moviesList = moviesResponse.getMovies();
             mMoviesAdapter.setMoviesList(moviesList);
             if (savedInstanceState != null) {
               if (savedInstanceState.containsKey(SAVED_LIST_POSITION_KEY)) {
@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
       }
 
       @Override
-      public void onFailure(Call<ServerResponse> call, Throwable t) {
+      public void onFailure(Call<MoviesResponse> call, Throwable t) {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
         Toast.makeText(MainActivity.this, R.string.error_unknown,
             Toast.LENGTH_SHORT).show();
