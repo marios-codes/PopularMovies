@@ -84,11 +84,19 @@
       tools:text='A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.'/>
 
     <include
+      android:id="@+id/layout_trailer"
       layout="@layout/detail_trailer"
       android:layout_marginTop="16dp"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       app:layout_constraintTop_toBottomOf="@+id/tv_detail_synopsis"/>
+
+    <include
+      layout="@layout/detail_reviews"
+      android:layout_marginTop="16dp"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      app:layout_constraintTop_toBottomOf="@id/layout_trailer"/>
 
   </android.support.constraint.ConstraintLayout>
 </android.support.v4.widget.NestedScrollView>
