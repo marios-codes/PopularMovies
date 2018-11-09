@@ -26,7 +26,6 @@ public class Review {
    * @param author author of the comment
    */
   public Review (String author, String content) {
-    super();
     this.author = author;
     this.content = content;
   }

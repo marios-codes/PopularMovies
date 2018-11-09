@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -14,8 +17,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import com.example.android.popularmovies.Adapters.ReviewsAdapter;
 import com.example.android.popularmovies.Models.Movie;
+import com.example.android.popularmovies.Models.RetrofitResponse.ReviewsResponse;
 import com.example.android.popularmovies.Models.RetrofitResponse.TrailersResponse;
+import com.example.android.popularmovies.Models.Review;
 import com.example.android.popularmovies.Models.Trailer;
 import com.example.android.popularmovies.Network.MovieDBInterface;
 import com.example.android.popularmovies.Network.MovieDBUtils;
@@ -55,7 +61,14 @@ public class DetailActivity extends AppCompatActivity {
   TextView trailerPlayLabelTV;
   @BindView(R.id.pb_detail_loading_trailer)
   ProgressBar trailerLoadingIndicator;
+  @BindView(R.id.rv_detail_reviews)
+  RecyclerView mReviewsRecycler;
+  @BindView(R.id.tv_detail_reviews_label)
+  TextView reviewLabelTV;
+  @BindView(R.id.pb_detail_loading_reviews)
+  ProgressBar reviewsLoadingIndicator;
 
+  private ReviewsAdapter mReviewsAdapter;
   private MovieDBInterface mMovieDBInterface;
   private String mTrailerUrl;
 
@@ -83,6 +96,7 @@ public class DetailActivity extends AppCompatActivity {
       initViews(movie);
       mMovieDBInterface = MovieDBUtils.setupMovieDbInterface();
       makeCallForTrailer(movie.getId());
+      makeCallForReviews(movie.getId());
     } else {
       closeOnError();
     }
@@ -105,6 +119,17 @@ public class DetailActivity extends AppCompatActivity {
         .load(movie.getBackdropPath())
         .placeholder(R.drawable.ic_popcorn_placeholder)
         .into(backDropIV);
+
+    //setup reviews recyclerview
+    LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+    mReviewsRecycler.setLayoutManager(layoutManager);
+    DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(this,
+        layoutManager.getOrientation());
+    mReviewsRecycler.addItemDecoration(dividerItemDecoration);
+    mReviewsRecycler.setNestedScrollingEnabled(false); //for smooth scrolling
+    mReviewsRecycler.setHasFixedSize(true);
+    mReviewsAdapter = new ReviewsAdapter();
+    mReviewsRecycler.setAdapter(mReviewsAdapter);
   }
 
   private void makeCallForTrailer(Integer movieId) {
@@ -153,7 +178,8 @@ public class DetailActivity extends AppCompatActivity {
             trailerLoadingIndicator.setVisibility(View.INVISIBLE);
             trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
             trailerPlayLabelTV.setVisibility(View.VISIBLE);
-            Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+            Toast.makeText(DetailActivity.this, R.string.detail_trailer_fetch_error,
+                Toast.LENGTH_SHORT)
                 .show();
           }
         } else {
@@ -162,7 +188,8 @@ public class DetailActivity extends AppCompatActivity {
           trailerLoadingIndicator.setVisibility(View.INVISIBLE);
           trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
           trailerPlayLabelTV.setVisibility(View.VISIBLE);
-          Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+          Toast.makeText(DetailActivity.this, R.string.detail_trailer_fetch_error,
+              Toast.LENGTH_SHORT)
               .show();
         }
       }
@@ -173,11 +200,70 @@ public class DetailActivity extends AppCompatActivity {
         trailerLoadingIndicator.setVisibility(View.INVISIBLE);
         trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
         trailerPlayLabelTV.setVisibility(View.VISIBLE);
-        Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+        Toast.makeText(DetailActivity.this, R.string.detail_trailer_fetch_error, Toast.LENGTH_SHORT)
             .show();
-        Log.e(TAG, "onFailure: Throwable: " + t.getMessage());
+        Log.e(TAG, "onTrailerFailure: Throwable: " + t.getMessage());
       }
     });
+  }
+
+  private void makeCallForReviews(Integer movieId) {
+    Call<ReviewsResponse> reviewsRequest = mMovieDBInterface
+        .getMovieReviews(movieId, MainActivity.API_KEY);
+
+    reviewsRequest.enqueue(new Callback<ReviewsResponse>() {
+      @Override
+      public void onResponse(Call<ReviewsResponse> call, Response<ReviewsResponse> response) {
+        if (response.isSuccessful()) {
+          ReviewsResponse reviewsResponse = response.body();
+          List<Review> reviewList;
+          if (reviewsResponse != null) {
+            reviewList = reviewsResponse.getReviewList();
+            if (!reviewList.isEmpty()) {
+              mReviewsAdapter.setReviewsList(reviewList);
+              //hide progress bar and set recycler view and reviews label to visible
+              //Additionally change the review label text to "reviews" from default "No reviews available"
+              reviewsLoadingIndicator.setVisibility(View.INVISIBLE);
+              mReviewsRecycler.setVisibility(View.VISIBLE);
+              reviewLabelTV.setText(R.string.detail_reviews_label);
+              reviewLabelTV.setVisibility(View.VISIBLE);
+            } else {
+              //review list is empty
+              //hide the progress bar and make review label textview visible (default message: "No reviews available")
+              reviewsLoadingIndicator.setVisibility(View.INVISIBLE);
+              reviewLabelTV.setVisibility(View.VISIBLE);
+            }
+          } else {
+            Log.w(TAG, "Review onResponse: Server Response = null");
+            //hide the progress bar and make review label textview visible (default message: "No reviews available")
+            reviewsLoadingIndicator.setVisibility(View.INVISIBLE);
+            reviewLabelTV.setVisibility(View.VISIBLE);
+            Toast.makeText(DetailActivity.this, R.string.detail_review_fetch_error,
+                Toast.LENGTH_SHORT)
+                .show();
+          }
+        } else {
+          Log.w(TAG, "Review onResponse: Response unsuccessful with code: " + response.code());
+          //hide the progress bar and make review label textview visible (default message: "No reviews available")
+          reviewsLoadingIndicator.setVisibility(View.INVISIBLE);
+          reviewLabelTV.setVisibility(View.VISIBLE);
+          Toast
+              .makeText(DetailActivity.this, R.string.detail_review_fetch_error, Toast.LENGTH_SHORT)
+              .show();
+        }
+      }
+
+      @Override
+      public void onFailure(Call<ReviewsResponse> call, Throwable t) {
+        //hide the progress bar and make review label textview visible (default message: "No reviews available")
+        reviewsLoadingIndicator.setVisibility(View.INVISIBLE);
+        reviewLabelTV.setVisibility(View.VISIBLE);
+        Toast.makeText(DetailActivity.this, R.string.detail_review_fetch_error, Toast.LENGTH_SHORT)
+            .show();
+        Log.e(TAG, "onReviewFailure: Throwable: " + t.getMessage());
+      }
+    });
+
   }
 
   private void closeOnError() {

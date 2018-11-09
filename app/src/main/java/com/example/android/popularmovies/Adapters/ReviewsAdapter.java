@@ -2,6 +2,7 @@ package com.example.android.popularmovies.Adapters;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapterViewHolder> {
+
+  private static final String TAG = ReviewsAdapter.class.getSimpleName();
 
   private List<Review> mReviewList = new ArrayList<>();
 
@@ -39,13 +42,12 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapterViewHolde
 
   @Override
   public int getItemCount() {
-    if (null == mReviewList) {
-      return 0;
-    }
+    Log.d(TAG, "getItemCount: " + mReviewList.size());
+    if (null == mReviewList) return 0;
     return mReviewList.size();
   }
 
-  public void setReviewList (List<Review> reviewList) {
+  public void setReviewsList (List<Review> reviewList) {
     mReviewList = reviewList;
     notifyDataSetChanged();
   }
@@ -59,6 +61,7 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapterViewHolde
 
     public ReviewsAdapterViewHolder(View itemView) {
       super(itemView);
+      Log.d(TAG, "ReviewsAdapterViewHolder: inside");
       ButterKnife.bind(this, itemView);
     }
   }

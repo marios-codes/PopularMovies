@@ -227,7 +227,10 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     super.onSaveInstanceState(outState);
     //save the scroll position of the list and the preferred sorting type
     //in order to retain it on a configuration change
-    outState.putParcelable(SAVED_LIST_POSITION_KEY, mRecyclerView.getLayoutManager().onSaveInstanceState());
+    //Also check for null, otherwise app will crash on orientation change with no internet connection
+    if (mRecyclerView != null && mRecyclerView.getLayoutManager()!= null) {
+      outState.putParcelable(SAVED_LIST_POSITION_KEY, mRecyclerView.getLayoutManager().onSaveInstanceState());
+    }
     outState.putSerializable(SAVED_PREFERRED_SORTING_KEY, mSortedBy);
   }
 }
