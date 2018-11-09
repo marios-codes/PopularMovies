@@ -14,8 +14,11 @@
   <string name="detail_movie_rating">Rating: %1$s /10</string>
   <string name="detail_movie_release_date">Release Date: %1$s</string>
   <string name="detail_trailer_play_label">Play Trailer</string>
+  <string name="detail_trailer_label_not_available">No trailer available</string>
+  <string name="detail_trailer_label_error">Could not fetch trailer</string>
   <string name="detail_error_message">Movie data not available</string>
   <string name="desc_iv_movie_poster">Movie Poster</string>
+
 
 
 </resources>

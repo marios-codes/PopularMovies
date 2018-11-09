@@ -25,9 +25,4 @@ public class MoviesResponse {
   public List<Movie> getMovies() {
     return movieList;
   }
-
-  public void setMovies(List<Movie> movieList) {
-    this.movieList = movieList;
-  }
-
 }

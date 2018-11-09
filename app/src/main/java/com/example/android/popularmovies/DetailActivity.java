@@ -3,13 +3,13 @@ package com.example.android.popularmovies;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import butterknife.BindView;
@@ -49,8 +49,12 @@ public class DetailActivity extends AppCompatActivity {
   ImageView posterIV;
   @BindView(R.id.iv_expanded_poster)
   ImageView backDropIV;
-  @BindView(R.id.layout_trailer)
-  ConstraintLayout mTrailerLayout;
+  @BindView(R.id.iv_detail_play_icon)
+  ImageView trailerPlayIV;
+  @BindView(R.id.detail_trailer_play_label)
+  TextView trailerPlayLabelTV;
+  @BindView(R.id.pb_detail_loading_trailer)
+  ProgressBar trailerLoadingIndicator;
 
   private MovieDBInterface mMovieDBInterface;
   private String mTrailerUrl;
@@ -128,26 +132,49 @@ public class DetailActivity extends AppCompatActivity {
             if (!trailerURLsList.isEmpty()) {
               mTrailerUrl = trailerURLsList.get(0);
               //The trailer list is not empty and we have fetched the video's YouTube URL
-              //So let's make the trailer layout visible so that the user can click on it
-              mTrailerLayout.setVisibility(View.VISIBLE);
+              //So let's make the trailer play button and label visible (invisible by default)
+              trailerPlayIV.setVisibility(View.VISIBLE);
+              trailerPlayLabelTV.setVisibility(View.VISIBLE);
+              //hide progress bar
+              trailerLoadingIndicator.setVisibility(View.INVISIBLE);
               Log.d(TAG, "onResponse: trailerUrl: " + mTrailerUrl);
             } else {
               //no trailers available
               Log.d(TAG, "onResponse: no trailers available");
+              //hide progress bar and update textview label to inform that no trailers are available
+              trailerLoadingIndicator.setVisibility(View.INVISIBLE);
+              trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
+              trailerPlayLabelTV.setVisibility(View.VISIBLE);
             }
 
           } else {
             Log.w(TAG, "onResponse: Server Response = null");
+            //hide progress bar and update textview label to inform that no trailers are available
+            trailerLoadingIndicator.setVisibility(View.INVISIBLE);
+            trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
+            trailerPlayLabelTV.setVisibility(View.VISIBLE);
+            Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+                .show();
           }
         } else {
           Log.w(TAG, "Trailer onResponse: Response unsuccessful with code: " + response.code());
+          //hide progress bar and update textview label to inform that no trailers are available
+          trailerLoadingIndicator.setVisibility(View.INVISIBLE);
+          trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
+          trailerPlayLabelTV.setVisibility(View.VISIBLE);
+          Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+              .show();
         }
       }
 
       @Override
       public void onFailure(Call<TrailersResponse> call, Throwable t) {
-        Toast.makeText(DetailActivity.this, R.string.error_unknown,
-            Toast.LENGTH_SHORT).show();
+        //hide progress bar and update textview label to inform that no trailers are available
+        trailerLoadingIndicator.setVisibility(View.INVISIBLE);
+        trailerPlayLabelTV.setText(R.string.detail_trailer_label_not_available);
+        trailerPlayLabelTV.setVisibility(View.VISIBLE);
+        Toast.makeText(DetailActivity.this, R.string.detail_trailer_label_error, Toast.LENGTH_SHORT)
+            .show();
         Log.e(TAG, "onFailure: Throwable: " + t.getMessage());
       }
     });
@@ -170,8 +197,10 @@ public class DetailActivity extends AppCompatActivity {
   }
 
   public void playTrailer(View view) {
-    Intent playTrailerIntent = new Intent(Intent.ACTION_VIEW);
-    playTrailerIntent.setData(Uri.parse(Uri.decode(mTrailerUrl)));
-    startActivity(playTrailerIntent);
+    if (mTrailerUrl != null && !mTrailerUrl.isEmpty()) {
+      Intent playTrailerIntent = new Intent(Intent.ACTION_VIEW);
+      playTrailerIntent.setData(Uri.parse(Uri.decode(mTrailerUrl)));
+      startActivity(playTrailerIntent);
+    }
   }
 }

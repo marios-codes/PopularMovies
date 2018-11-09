@@ -25,8 +25,4 @@ public class TrailersResponse {
   public List<Trailer> getTrailerList() {
     return trailerList;
   }
-
-  public void setMovies(List<Trailer> trailerList) {
-    this.trailerList = trailerList;
-  }
 }
