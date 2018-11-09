@@ -1,7 +1,9 @@
 package com.example.android.popularmovies;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -47,8 +49,11 @@ public class DetailActivity extends AppCompatActivity {
   ImageView posterIV;
   @BindView(R.id.iv_expanded_poster)
   ImageView backDropIV;
+  @BindView(R.id.layout_trailer)
+  ConstraintLayout mTrailerLayout;
 
   private MovieDBInterface mMovieDBInterface;
+  private String mTrailerUrl;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -121,8 +126,11 @@ public class DetailActivity extends AppCompatActivity {
             //We only care for one trailer, so let's take the first element of the
             //trailerURLsList array, if it has at least one element
             if (!trailerURLsList.isEmpty()) {
-              String trailerUrl = trailerURLsList.get(0);
-              Log.d(TAG, "onResponse: trailerUrl: " + trailerUrl);
+              mTrailerUrl = trailerURLsList.get(0);
+              //The trailer list is not empty and we have fetched the video's YouTube URL
+              //So let's make the trailer layout visible so that the user can click on it
+              mTrailerLayout.setVisibility(View.VISIBLE);
+              Log.d(TAG, "onResponse: trailerUrl: " + mTrailerUrl);
             } else {
               //no trailers available
               Log.d(TAG, "onResponse: no trailers available");
@@ -162,6 +170,8 @@ public class DetailActivity extends AppCompatActivity {
   }
 
   public void playTrailer(View view) {
-    //TODO implement logic
+    Intent playTrailerIntent = new Intent(Intent.ACTION_VIEW);
+    playTrailerIntent.setData(Uri.parse(Uri.decode(mTrailerUrl)));
+    startActivity(playTrailerIntent);
   }
 }
