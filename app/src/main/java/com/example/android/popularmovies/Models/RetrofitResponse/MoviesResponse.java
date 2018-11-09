@@ -1,10 +1,11 @@
-package com.example.android.popularmovies.Models;
+package com.example.android.popularmovies.Models.RetrofitResponse;
 
+import com.example.android.popularmovies.Models.Movie;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-public class ServerResponse {
+public class MoviesResponse {
 
   @SerializedName("results")
   @Expose
@@ -14,23 +15,14 @@ public class ServerResponse {
    * No args constructor for use in serialization
    *
    */
-  public ServerResponse() {
+  public MoviesResponse() {
   }
 
-  /**
-   *
-   * @param movieList
-   */
-  public ServerResponse(List<Movie> movieList) {
+  public MoviesResponse(List<Movie> movieList) {
     this.movieList = movieList;
   }
 
   public List<Movie> getMovies() {
     return movieList;
   }
-
-  public void setMovies(List<Movie> movieList) {
-    this.movieList = movieList;
-  }
-
 }
