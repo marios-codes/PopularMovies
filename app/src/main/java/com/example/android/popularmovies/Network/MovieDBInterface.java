@@ -1,6 +1,7 @@
 package com.example.android.popularmovies.Network;
 
 import com.example.android.popularmovies.Models.RetrofitResponse.MoviesResponse;
+import com.example.android.popularmovies.Models.RetrofitResponse.ReviewsResponse;
 import com.example.android.popularmovies.Models.RetrofitResponse.TrailersResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -17,5 +18,9 @@ public interface MovieDBInterface {
 
   @GET("movie/{movieId}/videos")
   Call<TrailersResponse> getMovieTrailers(@Path("movieId") Integer movieId,
+      @Query("api_key") String apiKey);
+
+  @GET("movie/{movieId}/reviews")
+  Call<ReviewsResponse> getMovieReviews(@Path("movieId") Integer movieId,
       @Query("api_key") String apiKey);
 }
