@@ -1,4 +1,4 @@
-package com.example.android.popularmovies;
+package com.example.android.popularmovies.Adapters;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -10,7 +10,8 @@ import android.widget.ImageView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Models.Movie;
-import com.example.android.popularmovies.MoviesAdapter.MoviesAdapterViewHolder;
+import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterViewHolder;
+import com.example.android.popularmovies.R;
 import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
