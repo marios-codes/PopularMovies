@@ -1,8 +1,13 @@
 package com.example.android.popularmovies;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.ImageViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,6 +16,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -18,6 +24,7 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Adapters.ReviewsAdapter;
+import com.example.android.popularmovies.Database.AppDatabase;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Models.RetrofitResponse.ReviewsResponse;
 import com.example.android.popularmovies.Models.RetrofitResponse.TrailersResponse;
@@ -67,10 +74,13 @@ public class DetailActivity extends AppCompatActivity {
   TextView reviewLabelTV;
   @BindView(R.id.pb_detail_loading_reviews)
   ProgressBar reviewsLoadingIndicator;
+  @BindView(R.id.fab_detail)
+  FloatingActionButton favFab;
 
   private ReviewsAdapter mReviewsAdapter;
   private MovieDBInterface mMovieDBInterface;
   private String mTrailerUrl;
+  private AppDatabase mDb;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +119,25 @@ public class DetailActivity extends AppCompatActivity {
     releaseDateTV.setText(
         getResources().getString(R.string.detail_movie_release_date, movie.getReleaseDate()));
     synopsisTV.setText(movie.getPlotSynopsis());
+
+    //init database or connect with the initialized one
+    mDb = AppDatabase.getInstance(getApplicationContext());
+
+    //setup Fav Floating Action Button
+    favFab.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        //TODO Implement logic for marking a movie as favorite
+        Snackbar.make(view, "Here's a Snackbar", Snackbar.LENGTH_SHORT)
+            .setAction("Action", null).show();
+        //TEST CODE to change star color on fab click
+        ImageViewCompat.setImageTintList(
+            favFab,
+            ColorStateList
+                .valueOf(ContextCompat.getColor(DetailActivity.this, R.color.fab_favorite_true))
+        );
+      }
+    });
 
     Picasso.get()
         .load(movie.getPosterPath())
