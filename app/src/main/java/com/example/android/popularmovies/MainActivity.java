@@ -16,6 +16,7 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Adapters.MoviesAdapter;
+import com.example.android.popularmovies.Database.AppDatabase;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Models.RetrofitResponse.MoviesResponse;
 import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterOnClickHandler;
@@ -37,9 +38,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   private static final int GRID_SPAN_COUNT = 2;
 
   private enum SortedBy {POPULARITY, TOP_RATED}
-
   private SortedBy mSortedBy = SortedBy.POPULARITY;
-
 
   public static final String API_KEY = BuildConfig.ApiKey;
   @BindView(R.id.recyclerview_movies)
@@ -48,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   ProgressBar mLoadingIndicator;
   private MoviesAdapter mMoviesAdapter;
   private MovieDBInterface mMovieDBInterface;
+  private AppDatabase mDb;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     setContentView(R.layout.activity_main);
     ButterKnife.bind(this);
 
+    //init AppDatabase
+    mDb = AppDatabase.getInstance(getApplicationContext());
 
     //Check if there is Internet connectivity
     new InternetCheck(new Consumer() {
@@ -88,15 +90,6 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
 
     loadMoviesData(mMovieDBInterface, mSortedBy, savedInstanceState);
   }
-
-//  private MovieDBInterface setupMovieDbInterface() {
-//    Retrofit retrofit = new Retrofit.Builder()
-//        .baseUrl("https://api.themoviedb.org/3/")
-//        .addConverterFactory(GsonConverterFactory.create())
-//        .build();
-//
-//    return retrofit.create(MovieDBInterface.class);
-//  }
 
   private void loadMoviesData(MovieDBInterface movieDBInterface, SortedBy sortedBy,
       final Bundle savedInstanceState) {

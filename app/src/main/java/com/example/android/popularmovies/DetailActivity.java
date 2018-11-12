@@ -24,6 +24,7 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Adapters.ReviewsAdapter;
+import com.example.android.popularmovies.Database.AppDatabase;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Models.RetrofitResponse.ReviewsResponse;
 import com.example.android.popularmovies.Models.RetrofitResponse.TrailersResponse;
@@ -79,6 +80,7 @@ public class DetailActivity extends AppCompatActivity {
   private ReviewsAdapter mReviewsAdapter;
   private MovieDBInterface mMovieDBInterface;
   private String mTrailerUrl;
+  private AppDatabase mDb;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +119,9 @@ public class DetailActivity extends AppCompatActivity {
     releaseDateTV.setText(
         getResources().getString(R.string.detail_movie_release_date, movie.getReleaseDate()));
     synopsisTV.setText(movie.getPlotSynopsis());
+
+    //init database or connect with the initialized one
+    mDb = AppDatabase.getInstance(getApplicationContext());
 
     //setup Fav Floating Action Button
     favFab.setOnClickListener(new OnClickListener() {
