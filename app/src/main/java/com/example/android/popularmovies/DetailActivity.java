@@ -112,7 +112,7 @@ public class DetailActivity extends AppCompatActivity {
     }
   }
 
-  private void initViews(Movie movie) {
+  private void initViews(final Movie movie) {
     titleTV.setText(movie.getTitle());
     ratingTV.setText(getResources()
         .getString(R.string.detail_movie_rating, String.valueOf(movie.getUserRating())));
@@ -124,18 +124,67 @@ public class DetailActivity extends AppCompatActivity {
     mDb = AppDatabase.getInstance(getApplicationContext());
 
     //setup Fav Floating Action Button
+    AppExecutors.getInstance().diskIO().execute(new Runnable() {
+      @Override
+      public void run() {
+        Movie favoriteMovie = mDb.movieDAO().findMovieWithID(movie.getId());
+        if (favoriteMovie != null && favoriteMovie.getId().equals(movie.getId())) {
+          //if user has marked movie as favorite change
+          //fab star color to yellow
+          ImageViewCompat.setImageTintList(
+              favFab,
+              ColorStateList
+                  .valueOf(ContextCompat.getColor(DetailActivity.this, R.color.fab_favorite_true))
+          );
+        }
+      }
+    });
+    //setup fab on click listener
     favFab.setOnClickListener(new OnClickListener() {
       @Override
-      public void onClick(View view) {
-        //TODO Implement logic for marking a movie as favorite
-        Snackbar.make(view, "Here's a Snackbar", Snackbar.LENGTH_SHORT)
-            .setAction("Action", null).show();
-        //TEST CODE to change star color on fab click
-        ImageViewCompat.setImageTintList(
-            favFab,
-            ColorStateList
-                .valueOf(ContextCompat.getColor(DetailActivity.this, R.color.fab_favorite_true))
-        );
+      public void onClick(final View view) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+          @Override
+          public void run() {
+            //check if movie already in favorites
+            Movie movieInFavorites = mDb.movieDAO().findMovieWithID(movie.getId());
+            if (movieInFavorites == null) {
+              //movie doesn't exist in favorites
+              mDb.movieDAO().insertFavoriteMovie(movie);
+              //change fab star color to yellow
+              runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  ImageViewCompat.setImageTintList(
+                      favFab,
+                      ColorStateList
+                          .valueOf(ContextCompat
+                              .getColor(DetailActivity.this, R.color.fab_favorite_true))
+                  );
+                  Snackbar.make(view, getString(R.string.detail_snackbar_added_to_favorites),
+                      Snackbar.LENGTH_SHORT).show();
+                }
+              });
+            } else {
+              //Movie already exists in favorites, so remove it
+              mDb.movieDAO().deleteFavoriteMovie(movie);
+              runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  //change fab star color to default white
+                  ImageViewCompat.setImageTintList(
+                      favFab,
+                      ColorStateList
+                          .valueOf(ContextCompat
+                              .getColor(DetailActivity.this, R.color.fab_favorite_false))
+                  );
+                  Snackbar.make(view, getString(R.string.detail_snackbar_removed_from_favorites),
+                      Snackbar.LENGTH_SHORT).show();
+                }
+              });
+            }
+          }
+        });
       }
     });
 

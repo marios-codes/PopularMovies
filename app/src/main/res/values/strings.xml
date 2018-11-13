@@ -21,6 +21,7 @@
   <string name="desc_iv_movie_poster">Movie Poster</string>
   <string name="detail_reviews_label">Reviews:</string>
   <string name="detail_reviews_label_empty">No reviews available</string>
-
+  <string name="detail_snackbar_added_to_favorites">Added to favorites</string>
+  <string name="detail_snackbar_removed_from_favorites">Removed from favorites</string>
 
 </resources>
