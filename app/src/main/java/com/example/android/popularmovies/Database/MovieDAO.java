@@ -17,7 +17,7 @@ public interface MovieDAO {
   LiveData<List<Movie>> loadAllFavoriteMovies();
 
   @Query("SELECT * FROM favorite_movie WHERE id LIKE :movieID")
-  Movie findMovieWithID(Integer movieID);
+  LiveData<Movie> findMovieWithID(Integer movieID);
 
   @Insert
   void insertFavoriteMovie(Movie movie);

@@ -1,9 +1,12 @@
 package com.example.android.popularmovies;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
@@ -124,13 +127,14 @@ public class DetailActivity extends AppCompatActivity {
     mDb = AppDatabase.getInstance(getApplicationContext());
 
     //setup Fav Floating Action Button
-    AppExecutors.getInstance().diskIO().execute(new Runnable() {
+    final LiveData<Movie> favoriteMovie = mDb.movieDAO().findMovieWithID(movie.getId());
+    favoriteMovie.observe(this, new Observer<Movie>() {
       @Override
-      public void run() {
-        Movie favoriteMovie = mDb.movieDAO().findMovieWithID(movie.getId());
-        if (favoriteMovie != null && favoriteMovie.getId().equals(movie.getId())) {
-          //if user has marked movie as favorite change
-          //fab star color to yellow
+      public void onChanged(@Nullable Movie movieFromFavorites) {
+        if (movieFromFavorites != null && movieFromFavorites.getId().equals(movie.getId())) {
+          //remove the observer as we don't need it any longer
+          favoriteMovie.removeObserver(this);
+          //if user has marked movie as favorite change fab star color to yellow
           ImageViewCompat.setImageTintList(
               favFab,
               ColorStateList
@@ -139,50 +143,59 @@ public class DetailActivity extends AppCompatActivity {
         }
       }
     });
+
     //setup fab on click listener
     favFab.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(final View view) {
-        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+        //check if movie already in favorites
+        final LiveData<Movie> movieInFavorites = mDb.movieDAO().findMovieWithID(movie.getId());
+        movieInFavorites.observe(DetailActivity.this, new Observer<Movie>() {
           @Override
-          public void run() {
-            //check if movie already in favorites
-            Movie movieInFavorites = mDb.movieDAO().findMovieWithID(movie.getId());
-            if (movieInFavorites == null) {
-              //movie doesn't exist in favorites
-              mDb.movieDAO().insertFavoriteMovie(movie);
-              //change fab star color to yellow
-              runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                  ImageViewCompat.setImageTintList(
-                      favFab,
-                      ColorStateList
-                          .valueOf(ContextCompat
-                              .getColor(DetailActivity.this, R.color.fab_favorite_true))
-                  );
-                  Snackbar.make(view, getString(R.string.detail_snackbar_added_to_favorites),
-                      Snackbar.LENGTH_SHORT).show();
+          public void onChanged(@Nullable final Movie fetchedMovie) {
+            //remove observer as we will get in an endless loop
+            movieInFavorites.removeObserver(this);
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+              @Override
+              public void run() {
+                if (fetchedMovie == null) {
+                  //movie doesn't exist in favorites
+                  mDb.movieDAO().insertFavoriteMovie(movie);
+                  //change fab star color to yellow
+                  runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                      ImageViewCompat.setImageTintList(
+                          favFab,
+                          ColorStateList
+                              .valueOf(ContextCompat
+                                  .getColor(DetailActivity.this, R.color.fab_favorite_true))
+                      );
+                      Snackbar.make(view, getString(R.string.detail_snackbar_added_to_favorites),
+                          Snackbar.LENGTH_SHORT).show();
+                    }
+                  });
+                } else {
+                  //Movie already exists in favorites, so remove it
+                  mDb.movieDAO().deleteFavoriteMovie(movie);
+                  runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                      //change fab star color to default white
+                      ImageViewCompat.setImageTintList(
+                          favFab,
+                          ColorStateList
+                              .valueOf(ContextCompat
+                                  .getColor(DetailActivity.this, R.color.fab_favorite_false))
+                      );
+                      Snackbar
+                          .make(view, getString(R.string.detail_snackbar_removed_from_favorites),
+                              Snackbar.LENGTH_SHORT).show();
+                    }
+                  });
                 }
-              });
-            } else {
-              //Movie already exists in favorites, so remove it
-              mDb.movieDAO().deleteFavoriteMovie(movie);
-              runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                  //change fab star color to default white
-                  ImageViewCompat.setImageTintList(
-                      favFab,
-                      ColorStateList
-                          .valueOf(ContextCompat
-                              .getColor(DetailActivity.this, R.color.fab_favorite_false))
-                  );
-                  Snackbar.make(view, getString(R.string.detail_snackbar_removed_from_favorites),
-                      Snackbar.LENGTH_SHORT).show();
-                }
-              });
-            }
+              }
+            });
           }
         });
       }
