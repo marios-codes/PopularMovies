@@ -91,32 +91,28 @@ public class Movie implements Parcelable {
     return id;
   }
 
-  public void setId(Integer id) {
-    this.id = id;
-  }
-
   public Double getUserRating() {
     return userRating;
-  }
-
-  public void setUserRating(Double userRating) {
-    this.userRating = userRating;
   }
 
   public String getTitle() {
     return title;
   }
 
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
   public String getPosterPath() {
-    return BASE_POSTER_IMAGE_URL + posterPath;
+    String imagePath = posterPath;
+    if (!posterPath.contains(BASE_POSTER_IMAGE_URL)) {
+      imagePath = BASE_POSTER_IMAGE_URL + posterPath;
+    }
+    return imagePath;
   }
 
-  public void setPosterPath(String posterPath) {
-    this.posterPath = BASE_POSTER_IMAGE_URL + posterPath;
+  public String getBackdropPath() {
+    String imagePath = backdropPath;
+    if (!backdropPath.contains(BASE_BACKDROP_IMAGE_URL)) {
+      imagePath = BASE_BACKDROP_IMAGE_URL + backdropPath;
+    }
+    return imagePath;
   }
 
   public String getPlotSynopsis() {
@@ -129,18 +125,6 @@ public class Movie implements Parcelable {
 
   public String getReleaseDate() {
     return releaseDate;
-  }
-
-  public void setReleaseDate(String releaseDate) {
-    this.releaseDate = releaseDate;
-  }
-
-  public String getBackdropPath() {
-    return BASE_BACKDROP_IMAGE_URL + backdropPath;
-  }
-
-  public void setBackdropPath(String backdropPath) {
-    this.backdropPath = BASE_BACKDROP_IMAGE_URL + backdropPath;
   }
 
   //Parcelable Constructor

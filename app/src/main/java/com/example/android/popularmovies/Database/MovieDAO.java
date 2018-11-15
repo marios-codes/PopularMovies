@@ -1,5 +1,6 @@
 package com.example.android.popularmovies.Database;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
@@ -13,7 +14,7 @@ import java.util.List;
 public interface MovieDAO {
 
   @Query("SELECT * FROM favorite_movie")
-  List<Movie> loadAllFavoriteMovies();
+  LiveData<List<Movie>> loadAllFavoriteMovies();
 
   @Query("SELECT * FROM favorite_movie WHERE id LIKE :movieID")
   Movie findMovieWithID(Integer movieID);

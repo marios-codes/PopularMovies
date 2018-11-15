@@ -1,8 +1,11 @@
 package com.example.android.popularmovies;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,10 +19,10 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Adapters.MoviesAdapter;
+import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterOnClickHandler;
 import com.example.android.popularmovies.Database.AppDatabase;
 import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Models.RetrofitResponse.MoviesResponse;
-import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterOnClickHandler;
 import com.example.android.popularmovies.Network.InternetCheck;
 import com.example.android.popularmovies.Network.InternetCheck.Consumer;
 import com.example.android.popularmovies.Network.MovieDBInterface;
@@ -37,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
 
   private static final int GRID_SPAN_COUNT = 2;
 
-  private enum SortedBy {POPULARITY, TOP_RATED}
+  private enum SortedBy {POPULARITY, TOP_RATED, FAVORITES}
   private SortedBy mSortedBy = SortedBy.POPULARITY;
 
   public static final String API_KEY = BuildConfig.ApiKey;
@@ -55,8 +58,6 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     setContentView(R.layout.activity_main);
     ButterKnife.bind(this);
 
-    //init AppDatabase
-    mDb = AppDatabase.getInstance(getApplicationContext());
 
     //Check if there is Internet connectivity
     new InternetCheck(new Consumer() {
@@ -74,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
               mSortedBy = (SortedBy) savedInstanceState.getSerializable(SAVED_PREFERRED_SORTING_KEY);
             }
           }
+          //TODO BUG MovieAdapter hasn't been initialized when no internet connectivity, causing
+          //app to crash when loading favorites from menu
           initViews(savedInstanceState);
         }
       }
@@ -151,6 +154,23 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     });
   }
 
+  private void loadFavoriteMovies() {
+    mDb = AppDatabase.getInstance(getApplicationContext());
+    LiveData<List<Movie>> favoriteMovies = mDb.movieDAO().loadAllFavoriteMovies();
+    favoriteMovies.observe(this, new Observer<List<Movie>>() {
+      @Override
+      public void onChanged(@Nullable List<Movie> movies) {
+        if (mSortedBy == SortedBy.FAVORITES) {
+          mMoviesAdapter.setMoviesList(movies);
+          //TODO check for savedInstanceState and write code to maintain recyclerview position
+          //when favorites sorting is selected and screen orientation changes
+          //TODO BUG when rotating device, it changes the preferred sorting of movies
+//          mRecyclerView.scrollToPosition(0);
+        }
+      }
+    });
+  }
+
   /**
    * This method is overridden by our MainActivity class in order to handle RecyclerView item
    * clicks.
@@ -210,6 +230,11 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
             }
           }
         });
+        return true;
+      case R.id.menu_sort_by_favorites:
+        item.setChecked(true);
+        mSortedBy = SortedBy.FAVORITES;
+        loadFavoriteMovies();
         return true;
       default:
         return super.onOptionsItemSelected(item);

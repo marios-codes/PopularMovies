@@ -9,14 +9,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterViewHolder;
+import com.example.android.popularmovies.Models.Movie;
 import com.example.android.popularmovies.R;
 import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapterViewHolder> {
+
+  private static final String TAG = MoviesAdapter.class.getSimpleName();
 
   /**
    * The interface that receives onClick messages.
