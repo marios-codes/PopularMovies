@@ -253,7 +253,6 @@ public class DetailActivity extends AppCompatActivity {
               trailerPlayLabelTV.setVisibility(View.VISIBLE);
               //hide progress bar
               trailerLoadingIndicator.setVisibility(View.INVISIBLE);
-              Log.d(TAG, "onResponse: trailerUrl: " + mTrailerUrl);
             } else {
               //no trailers available
               Log.d(TAG, "onResponse: no trailers available");

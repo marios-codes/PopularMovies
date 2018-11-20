@@ -1,7 +1,7 @@
 package com.example.android.popularmovies;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -9,7 +9,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -20,46 +19,62 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.example.android.popularmovies.Adapters.MoviesAdapter;
 import com.example.android.popularmovies.Adapters.MoviesAdapter.MoviesAdapterOnClickHandler;
-import com.example.android.popularmovies.Database.AppDatabase;
 import com.example.android.popularmovies.Models.Movie;
-import com.example.android.popularmovies.Models.RetrofitResponse.MoviesResponse;
 import com.example.android.popularmovies.Network.InternetCheck;
 import com.example.android.popularmovies.Network.InternetCheck.Consumer;
-import com.example.android.popularmovies.Network.MovieDBInterface;
-import com.example.android.popularmovies.Network.MovieDBUtils;
 import java.util.List;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements MoviesAdapterOnClickHandler {
 
   private static final String TAG = MainActivity.class.getSimpleName();
   private static final String SAVED_LIST_POSITION_KEY = "list-position";
   private static final String SAVED_PREFERRED_SORTING_KEY = "sorting-type";
+  private static final String SAVED_MENU_ITEM_ID_KEY = "menu-item-id";
 
   private static final int GRID_SPAN_COUNT = 2;
 
   private enum SortedBy {POPULARITY, TOP_RATED, FAVORITES}
+
   private SortedBy mSortedBy = SortedBy.POPULARITY;
+  private int mSelectedMenuItemID = -1;
 
   public static final String API_KEY = BuildConfig.ApiKey;
   @BindView(R.id.recyclerview_movies)
   RecyclerView mRecyclerView;
   @BindView(R.id.pb_loading_indicator)
   ProgressBar mLoadingIndicator;
+  private MainViewModel mainViewModel;
   private MoviesAdapter mMoviesAdapter;
-  private MovieDBInterface mMovieDBInterface;
-  private AppDatabase mDb;
+  private Bundle mSavedInstanceState;
 
   @Override
-  protected void onCreate(final Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     ButterKnife.bind(this);
+    mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+    mSavedInstanceState = savedInstanceState;
+    initViews();
 
+    //get preferred sorting order in case the activity is recreated due to a configuration change
+    if (mSavedInstanceState != null) {
+      if (mSavedInstanceState.containsKey(SAVED_PREFERRED_SORTING_KEY)) {
+        mSortedBy = (SortedBy) mSavedInstanceState
+            .getSerializable(SAVED_PREFERRED_SORTING_KEY);
+      }
+    }
 
-    //Check if there is Internet connectivity
+    /*
+    check if this part runs from an orientation change where favorite movies sorting was selected
+    so that we run the setupViewModelForFavoriteMovies() method even if no internet connection
+    is available
+    */
+    if (mSortedBy.equals(SortedBy.FAVORITES)) {
+      setupViewModelForFavoriteMovies();
+      return;
+    }
+
+    //Check if there is Internet connectivity to load popular or top rated movies
     new InternetCheck(new Consumer() {
       @Override
       public void onConnectivityCheck(Boolean isConnected) {
@@ -67,23 +82,17 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
           Toast.makeText(MainActivity.this, R.string.error_no_internet,
               Toast.LENGTH_LONG).show();
         } else {
-          //setup Retrofit
-          mMovieDBInterface = MovieDBUtils.setupMovieDbInterface();
-          //get preferred sorting order in case the activity is recreated due to a configuration change
-          if (savedInstanceState!= null) {
-            if (savedInstanceState.containsKey(SAVED_PREFERRED_SORTING_KEY)) {
-              mSortedBy = (SortedBy) savedInstanceState.getSerializable(SAVED_PREFERRED_SORTING_KEY);
-            }
+          if (mSortedBy.equals(SortedBy.POPULARITY)) {
+            setupViewModelForPopularMovies();
+          } else {
+            setupViewModelForTopRatedMovies();
           }
-          //TODO BUG MovieAdapter hasn't been initialized when no internet connectivity, causing
-          //app to crash when loading favorites from menu
-          initViews(savedInstanceState);
         }
       }
     });
   }
 
-  private void initViews(Bundle savedInstanceState) {
+  private void initViews() {
     GridLayoutManager mLayoutManager = new GridLayoutManager(MainActivity.this, GRID_SPAN_COUNT);
     mRecyclerView.setLayoutManager(mLayoutManager);
     mRecyclerView.setHasFixedSize(true);
@@ -91,84 +100,68 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     mMoviesAdapter = new MoviesAdapter(this);
     mRecyclerView.setAdapter(mMoviesAdapter);
 
-    loadMoviesData(mMovieDBInterface, mSortedBy, savedInstanceState);
   }
 
-  private void loadMoviesData(MovieDBInterface movieDBInterface, SortedBy sortedBy,
-      final Bundle savedInstanceState) {
-    mLoadingIndicator.setVisibility(View.VISIBLE);
-
-    Call<MoviesResponse> moviesRequest;
-    switch (sortedBy) {
-      case POPULARITY:
-        moviesRequest = movieDBInterface
-            .getPopularMoviesList(API_KEY);
-        break;
-      case TOP_RATED:
-        moviesRequest = movieDBInterface.getTopRatedMoviesList(API_KEY);
-        break;
-      default:
-        moviesRequest = movieDBInterface
-            .getPopularMoviesList(API_KEY);
-        break;
-    }
-
-    moviesRequest.enqueue(new Callback<MoviesResponse>() {
+  private void setupViewModelForPopularMovies() {
+    mainViewModel.getPopularMovies().observe(this, new Observer<List<Movie>>() {
       @Override
-      public void onResponse(Call<MoviesResponse> call, Response<MoviesResponse> response) {
+      public void onChanged(@Nullable List<Movie> movieList) {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
-        Log.d(TAG, "onResponse: Call: " + call);
-        Log.d(TAG, "onResponse: response: " + response);
-        if (response.isSuccessful()) {
-          MoviesResponse moviesResponse = response.body();
-          List<Movie> moviesList;
-          if (moviesResponse != null) {
-            moviesList = moviesResponse.getMovies();
-            mMoviesAdapter.setMoviesList(moviesList);
-            if (savedInstanceState != null) {
-              if (savedInstanceState.containsKey(SAVED_LIST_POSITION_KEY)) {
-                Parcelable savedRecyclerLayoutState = savedInstanceState.getParcelable(SAVED_LIST_POSITION_KEY);
-                mRecyclerView.getLayoutManager().onRestoreInstanceState(savedRecyclerLayoutState);
-              }
-            } else {
-              mRecyclerView.scrollToPosition(0);
-            }
-          } else {
-            //server response is null
-            mLoadingIndicator.setVisibility(View.INVISIBLE);
-            Log.w(TAG, "onResponse: Server Response = null");
-          }
+        if (movieList == null) {
+          Toast.makeText(MainActivity.this, R.string.error_unknown,
+              Toast.LENGTH_SHORT).show();
         } else {
-          Log.w(TAG, "onResponse: Response unsuccessful with code: " + response.code());
+          mMoviesAdapter.setMoviesList(movieList);
+          scrollListToSavedPosition();
         }
-
-      }
-
-      @Override
-      public void onFailure(Call<MoviesResponse> call, Throwable t) {
-        mLoadingIndicator.setVisibility(View.INVISIBLE);
-        Toast.makeText(MainActivity.this, R.string.error_unknown,
-            Toast.LENGTH_SHORT).show();
-        Log.e(TAG, "onFailure: Throwable: " + t.getMessage());
       }
     });
   }
 
-  private void loadFavoriteMovies() {
-    mDb = AppDatabase.getInstance(getApplicationContext());
-    LiveData<List<Movie>> favoriteMovies = mDb.movieDAO().loadAllFavoriteMovies();
-    favoriteMovies.observe(this, new Observer<List<Movie>>() {
+  private void setupViewModelForTopRatedMovies() {
+    mainViewModel.getTopRatedMovies().observe(this, new Observer<List<Movie>>() {
+      @Override
+      public void onChanged(@Nullable List<Movie> movieList) {
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
+        if (movieList == null) {
+          Toast.makeText(MainActivity.this, R.string.error_unknown,
+              Toast.LENGTH_SHORT).show();
+        } else {
+          mMoviesAdapter.setMoviesList(movieList);
+          scrollListToSavedPosition();
+        }
+      }
+    });
+  }
+
+  private void setupViewModelForFavoriteMovies() {
+    mainViewModel.getFavoriteMovies(MainActivity.this).observe(this, new Observer<List<Movie>>() {
       @Override
       public void onChanged(@Nullable List<Movie> movies) {
-        if (mSortedBy == SortedBy.FAVORITES) {
+        if (movies != null) {
           mMoviesAdapter.setMoviesList(movies);
-          //TODO check for savedInstanceState and write code to maintain recyclerview position
-          //when favorites sorting is selected and screen orientation changes
-          //TODO BUG when rotating device, it changes the preferred sorting of movies
-//          mRecyclerView.scrollToPosition(0);
+          scrollListToSavedPosition();
+        } else {
+          Toast.makeText(MainActivity.this, R.string.empty_favorite_list_toast, Toast.LENGTH_SHORT)
+              .show();
         }
       }
     });
+  }
+
+  private void scrollListToSavedPosition() {
+    if (mSavedInstanceState != null && mSavedInstanceState
+        .containsKey(SAVED_LIST_POSITION_KEY)) {
+      if (mSavedInstanceState.containsKey(SAVED_PREFERRED_SORTING_KEY) && mSavedInstanceState.getSerializable(SAVED_PREFERRED_SORTING_KEY).equals(mSortedBy)) {
+        Parcelable savedRecyclerLayoutState = mSavedInstanceState
+            .getParcelable(SAVED_LIST_POSITION_KEY);
+        mRecyclerView.getLayoutManager().onRestoreInstanceState(savedRecyclerLayoutState);
+      } else {
+        mRecyclerView.scrollToPosition(0);
+      }
+    } else {
+      mRecyclerView.scrollToPosition(0);
+    }
   }
 
   /**
@@ -190,6 +183,15 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
     MenuInflater inflater = getMenuInflater();
     /* Use the inflater's inflate method to inflate our menu layout to this menu */
     inflater.inflate(R.menu.main, menu);
+    //check the menu item that was selected before orientation change
+    if (mSavedInstanceState != null && mSavedInstanceState.containsKey(SAVED_MENU_ITEM_ID_KEY)) {
+      mSelectedMenuItemID = mSavedInstanceState.getInt(SAVED_MENU_ITEM_ID_KEY);
+      if (mSelectedMenuItemID != -1) { //default id assigned on first run
+        MenuItem itemToBeChecked = menu.findItem(mSelectedMenuItemID);
+        itemToBeChecked.setChecked(true);
+      }
+    }
+
     /* Return true so that the menu is displayed in the Toolbar */
     return true;
   }
@@ -208,9 +210,10 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
               Toast.makeText(MainActivity.this, R.string.error_no_internet,
                   Toast.LENGTH_LONG).show();
             } else {
+              mSelectedMenuItemID = R.id.menu_sort_by_popularity;
               item.setChecked(true);
               mSortedBy = SortedBy.POPULARITY;
-              loadMoviesData(mMovieDBInterface, mSortedBy, null);
+              setupViewModelForPopularMovies();
             }
           }
         });
@@ -224,17 +227,19 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
               Toast.makeText(MainActivity.this, R.string.error_no_internet,
                   Toast.LENGTH_LONG).show();
             } else {
+              mSelectedMenuItemID = R.id.menu_sort_by_rating;
               item.setChecked(true);
               mSortedBy = SortedBy.TOP_RATED;
-              loadMoviesData(mMovieDBInterface, mSortedBy, null);
+              setupViewModelForTopRatedMovies();
             }
           }
         });
         return true;
       case R.id.menu_sort_by_favorites:
+        mSelectedMenuItemID = R.id.menu_sort_by_favorites;
         item.setChecked(true);
         mSortedBy = SortedBy.FAVORITES;
-        loadFavoriteMovies();
+        setupViewModelForFavoriteMovies();
         return true;
       default:
         return super.onOptionsItemSelected(item);
@@ -244,12 +249,16 @@ public class MainActivity extends AppCompatActivity implements MoviesAdapterOnCl
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    //save the scroll position of the list and the preferred sorting type
-    //in order to retain it on a configuration change
-    //Also check for null, otherwise app will crash on orientation change with no internet connection
-    if (mRecyclerView != null && mRecyclerView.getLayoutManager()!= null) {
-      outState.putParcelable(SAVED_LIST_POSITION_KEY, mRecyclerView.getLayoutManager().onSaveInstanceState());
+/* save the scroll position of the list and the preferred sorting type
+    in order to retain it on a configuration change
+    Also check for null, otherwise app will crash on orientation change with no internet connection
+*/
+    if (mRecyclerView != null && mRecyclerView.getLayoutManager() != null) {
+      outState.putParcelable(SAVED_LIST_POSITION_KEY,
+          mRecyclerView.getLayoutManager().onSaveInstanceState());
     }
     outState.putSerializable(SAVED_PREFERRED_SORTING_KEY, mSortedBy);
+    //save the menu item that was checked
+    outState.putInt(SAVED_MENU_ITEM_ID_KEY, mSelectedMenuItemID);
   }
 }
